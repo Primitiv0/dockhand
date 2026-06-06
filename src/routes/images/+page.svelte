@@ -729,7 +729,7 @@
 				/>
 			</div>
 			<Select.Root type="single" bind:value={usageFilter}>
-				<Select.Trigger size="sm" class="w-28 text-sm">
+				<Select.Trigger size="sm" class="w-36 text-sm">
 					{#if usageFilter === 'all'}
 						<Filter class="w-3.5 h-3.5 mr-1.5 text-muted-foreground shrink-0" />
 						<span class="text-muted-foreground">All</span>

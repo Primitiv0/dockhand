@@ -106,12 +106,6 @@
 	let labels = $state<{ key: string; value: string }[]>([{ key: '', value: '' }]);
 
 	// Networks
-	interface DockerNetwork {
-		id: string;
-		name: string;
-		driver: string;
-	}
-	let availableNetworks = $state<DockerNetwork[]>([]);
 	let selectedNetworks = $state<string[]>([]);
 	let networkConfigs = $state<Record<string, { ipv4Address: string; ipv6Address: string; aliases: string }>>({});
 	let macAddress = $state('');
@@ -192,7 +186,6 @@
 	$effect(() => {
 		if (open) {
 			fetchConfigSets();
-			fetchNetworks();
 			fetchScannerSettings();
 		}
 	});
@@ -279,18 +272,6 @@
 
 	function handleScanStatusChange(status: 'idle' | 'scanning' | 'complete' | 'error') {
 		scanStatus = status;
-	}
-
-	async function fetchNetworks() {
-		try {
-			const envParam = $currentEnvironment ? `?env=${$currentEnvironment.id}` : '';
-			const response = await fetch(`/api/networks${envParam}`);
-			if (response.ok) {
-				availableNetworks = await response.json();
-			}
-		} catch (err) {
-			console.error('Failed to fetch networks:', err);
-		}
 	}
 
 	async function fetchConfigSets() {
@@ -457,7 +438,11 @@
 				restartPolicy,
 				restartMaxRetries: restartPolicy === 'on-failure' && restartMaxRetries !== '' ? Number(restartMaxRetries) : undefined,
 				networkMode,
-				networks: selectedNetworks.length > 0 ? selectedNetworks : undefined,
+				additionalNetworks: (() => {
+					const isSharedMode = networkMode === 'host' || networkMode === 'none' || networkMode.startsWith('container:');
+					if (isSharedMode) return undefined;
+					return selectedNetworks.length > 0 ? selectedNetworks : undefined;
+				})(),
 				networkConfigs: Object.keys(netConfigs).length > 0 ? netConfigs : undefined,
 				macAddress: macAddress.trim() || undefined,
 				startAfterCreate,
@@ -740,7 +725,6 @@
 				bind:volumeMappings
 				bind:envVars
 				bind:labels
-				{availableNetworks}
 				bind:selectedNetworks
 				bind:networkConfigs
 				bind:macAddress
